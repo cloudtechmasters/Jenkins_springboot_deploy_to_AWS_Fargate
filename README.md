@@ -9,4 +9,5 @@ https://docs.aws.amazon.com/corretto/latest/corretto-17-ug/amazon-linux-install.
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 
-750285159662.dkr.ecr.us-east-2.amazonaws.com/springdemo:latest
+451060642371.dkr.ecr.us-east-2.amazonaws.com/ecs-fargate:latest
+
