@@ -92,6 +92,14 @@ Goto Jenkins --> New Item
 
 <img width="1261" alt="image" src="https://user-images.githubusercontent.com/68885738/182857272-84eba140-0ef3-45de-a8f2-e8701888f7d8.png">
 
+Now paste the content of Jenkinsfile to pipeline script.
+
+<img width="1496" alt="image" src="https://user-images.githubusercontent.com/68885738/182857588-c3f180f7-3f9f-472c-a707-ce09808dd596.png">
+
+Once Job is created click on build now.
+
+<img width="1519" alt="image" src="https://user-images.githubusercontent.com/68885738/182857911-0d68f3ff-bd1e-4421-ae3c-92e94fb68937.png">
+
 
 
     
