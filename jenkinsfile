@@ -1,18 +1,16 @@
 pipeline {
     agent any
-	  environment {
-		  //registry = '451060642371.dkr.ecr.us-east-2.amazonaws.com/ecs-fargate:latest'
-		  //dockerImage = ''
-		  REPOSITORY_URI = '451060642371.dkr.ecr.us-east-2.amazonaws.com/ecs-fargate:latest'
-      SERVICE_NAME = 'container-app-demo'
-      TASK_FAMILY="container-app-demo" // at least one container needs to have the same name as the task definition
-      DESIRED_COUNT="1"
-      CLUSTER_NAME = "my-ECS-cluster"
-      AWS_ID = credentials("aws-credentials")
-      AWS_ACCESS_KEY_ID = "${env.AWS_ID_USR}"
-      AWS_SECRET_ACCESS_KEY = "${env.AWS_ID_PSW}"
-      AWS_DEFAULT_REGION = "us-east-2"
-      EXECUTION_ROLE_ARN = "arn:aws:iam::451060642371:role/ecsTaskExecutionRole"
+	environment {
+		REPOSITORY_URI = '451060642371.dkr.ecr.us-east-2.amazonaws.com/ecs-fargate'
+      		SERVICE_NAME = 'container-app-demo'
+      		TASK_FAMILY="container-app-demo" // at least one container needs to have the same name as the task definition
+      		DESIRED_COUNT="1"
+      		CLUSTER_NAME = "my-ECS-cluster"
+      		AWS_ID = credentials("aws-credentials")
+      		AWS_ACCESS_KEY_ID = "${env.AWS_ID_USR}"
+      		AWS_SECRET_ACCESS_KEY = "${env.AWS_ID_PSW}"
+      		AWS_DEFAULT_REGION = "us-east-2"
+      		EXECUTION_ROLE_ARN = "arn:aws:iam::451060642371:role/ecsTaskExecutionRole"
 	  }
     stages {
         stage ('SCM') {
@@ -32,14 +30,14 @@ pipeline {
         stage ('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build registry
+                    dockerImage = docker.build REPOSITORY_URI
                 }
             }
         }
         stage ('Push Docker Image to ECR') {
             steps {
                 script {
-                    docker.withRegistry('${REPOSITORY_URI}', 'ecr:us-east-2:aws-credentials') {
+                    docker.withRegistry("https://" + REPOSITORY_URI, 'ecr:us-east-2:aws-credentials') {
                     dockerImage.push("${env.BUILD_NUMBER}")
                     dockerImage.push("latest")
                     }
@@ -49,17 +47,11 @@ pipeline {
         stage('Deploy Task to ECS') {
             steps{
                 // prepare task definition file
-                sh """sed -e "s;%REPOSITORY_URI%;${REPOSITORY_URI};g" -e "s;%TASK_FAMILY%;${TASK_FAMILY};g" -e "s;%SERVICE_NAME%;${SERVICE_NAME};g" -e "s;%EXECUTION_ROLE_ARN%;${EXECUTION_ROLE_ARN};g" taskdef_template.json > taskdef_${env.BUILD_NUMBER}.json"""
+                sh """sed -e "s;%REPOSITORY_URI%;${REPOSITORY_URI}:${env.BUILD_NUMBER};g" -e "s;%TASK_FAMILY%;${TASK_FAMILY};g" -e "s;%SERVICE_NAME%;${SERVICE_NAME};g" -e "s;%EXECUTION_ROLE_ARN%;${EXECUTION_ROLE_ARN};g" taskdef_template.json > taskdef_${env.BUILD_NUMBER}.json"""
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws-credentials', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
                 script {
                     // Register task definition
-                    sh("aws ecs register-task-definition --output json --cli-input-json file://${WORKSPACE}/taskdef_${env.BUILD_NUMBER}.json > ${env.WORKSPACE}/temp.json")
-                    //def TASK_REVISION = sh (script: '`cat temp.json |grep -i revision| awk \'{print $2}\'`',returnStdout: true).trim()
-                    //env.TASK_REVISION = getCommandOutput("cat temp.json |grep -i revision| awk \'{print ${2}}\'")
-				
-                    // update service
-                    //sh(echo "aws ecs update-service --cluster ${CLUSTER_NAME} --service ${SERVICE_NAME} --task-definition ${TASK_FAMILY}:getCommandOutput(cat temp.json |grep -i revision| awk \'{print ${2}}\') --desired-count ${DESIRED_COUNT}")
-                    
+                    sh("aws ecs register-task-definition --output json --cli-input-json file://${WORKSPACE}/taskdef_${env.BUILD_NUMBER}.json > ${env.WORKSPACE}/temp.json")                
                 }
                 }
             }
